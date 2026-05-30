@@ -272,11 +272,11 @@ useEffect(() => {
 
               <th>No of Cases</th>
 
-              <th>Amount</th>
+              <th>Total Section Amount</th>
 
-              <th>Actual Repay Amt</th>
+              <th>Total Repay Amt</th>
 
-              <th>Actual Received Amt</th>
+              <th>Total Received Amt</th>
 
               <th>% Received</th>
 
