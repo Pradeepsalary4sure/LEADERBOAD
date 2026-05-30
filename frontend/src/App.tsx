@@ -158,23 +158,25 @@ function App() {
 
   // MONTH FILTER
   const [month, setMonth] = useState("All");
+useEffect(() => {
 
-  useEffect(() => {
+  axios
+    .get(
+      `https://leaderboad-backend.onrender.com/api/leaderboard?month=${month}`
+    )
+    .then((res) => {
 
-    axios
-      .get(
-        `http://localhost:5000/api/leaderboard?month=${month}`
-      )
-      .then((res) => {
+      setFresh(res.data.fresh);
+      setRepeat(res.data.repeat);
 
-        setFresh(res.data.fresh);
+    })
+    .catch((err) => {
 
-        setRepeat(res.data.repeat);
+      console.error("API Error:", err);
 
-      });
+    });
 
-  }, [month]);
-
+}, [month]);
   // ==========================
   // TOP 3
   // ==========================
