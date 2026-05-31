@@ -1,353 +1,179 @@
-// const express = require("express");
-// const cors = require("cors");
-// const axios = require("axios");
-// const Papa = require("papaparse");
-// require("dotenv").config();
+    // const express = require("express");
+    // const cors = require("cors");
+    // const axios = require("axios");
+    // const Papa = require("papaparse");
+    // require("dotenv").config();
 
-// const app = express();
-// app.use(cors());
+    // const app = express();
 
-// const PORT = 5000;
-// const SHEET_URL = process.env.SHEET_URL;
+    // app.use(cors());
 
-// app.get("/api/leaderboard", async (req, res) => {
-//   try {
-//     console.log("Fetching sheet...");
+    // const PORT = process.env.PORT || 5000;
 
-//     const response = await axios.get(SHEET_URL);
+    // const SHEET_URL = process.env.SHEET_URL;
 
-//     const rows = Papa.parse(response.data, {
-//       skipEmptyLines: true
-//     }).data;
+    // app.get("/", (req, res) => {
+    //   res.send("Leaderboard Backend Running");
+    // });
 
-//     let freshMap = {};
-//     let repeatMap = {};
+    // app.get("/api/leaderboard", async (req, res) => {
+    //   try {
 
-//     rows.slice(1).forEach((row) => {
-
-//       const amount = Number(
-//         String(row[4] || "").replace(/[^0-9.]/g, "")
-//       ) || 0;
-
-//       const type = String(row[27] || "").toLowerCase().trim();
-//       const executive = String(row[28] || "").trim();
-
-//       if (!executive) return;
-
-//       const key = executive.toLowerCase();
-
-//       const isFresh = type.includes("fresh") || type.includes("new");
-//       const isRepeat = type.includes("repeat");
-
-//       const target = isFresh ? freshMap : isRepeat ? repeatMap : null;
-//       if (!target) return;
-
-//       if (!target[key]) {
-//         target[key] = {
-//           name: executive,
-//           cases: 0,
-//           amount: 0
-//         };
-//       }
-
-//       target[key].cases += 1;
-//       target[key].amount += amount;
-//     });
-
-//     const fresh = Object.values(freshMap).sort((a,b)=>b.amount-a.amount);
-//     const repeat = Object.values(repeatMap).sort((a,b)=>b.amount-a.amount);
-
-//     res.json({ fresh, repeat });
-
-//   } catch (err) {
-//     console.log("ERROR:", err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// app.listen(PORT, () => {
-//   console.log("Server running on", PORT);
-// });
-
-
-
-// const express = require("express");
-// const cors = require("cors");
-// const axios = require("axios");
-// const Papa = require("papaparse");
-// require("dotenv").config();
-
-// const app = express();
-
-// app.use(cors());
-
-// const PORT = 5000;
-
-// const SHEET_URL = process.env.SHEET_URL;
-
-// app.get("/api/leaderboard", async (req, res) => {
-
-//   try {
-
-//     /*
-//       MONTH FROM FRONTEND
-//     */
-
-//     const selectedMonth = String(
-//       req.query.month || "all"
-//     )
-//       .trim()
-//       .toLowerCase();
-
-//     console.log(
-//       "SELECTED MONTH =>",
-//       selectedMonth
-//     );
-
-//     /*
-//       FETCH SHEET
-//     */
-
-//     const response =
-//       await axios.get(SHEET_URL);
-
-//     /*
-//       PARSE CSV
-//     */
-
-//     const rows = Papa.parse(
-//       response.data,
-//       {
-//         skipEmptyLines: true
-//       }
-//     ).data;
-
-//     /*
-//       MAPS
-//     */
-
-//     let freshMap = {};
-//     let repeatMap = {};
-
-//     /*
-//       LOOP
-//     */
-
-//     rows.slice(1).forEach((row) => {
-
-//       /*
-//         COLUMN INDEX
-
-//         E  = Amount = 4
-//         Q  = Month = 16
-//         AB = Type = 27
-//         AC = Executive = 28
-//       */
-
-//       /*
-//         MONTH
-//       */
-
-//       const rowMonth = String(
-//         row[16] || ""
-//       )
-//         .trim()
-//         .toLowerCase();
-
-//       /*
-//         MONTH FILTER
-//       */
-
-//       if (selectedMonth !== "all") {
-//         const normalizedSelectedMonth = selectedMonth
-//           .replace(/['\s-]/g, "")
-//           .toLowerCase();
-
-//         const normalizedRowMonth = rowMonth
-//           .replace(/['\s-]/g, "")
-//           .toLowerCase();
-
-//         if (!normalizedRowMonth.startsWith(normalizedSelectedMonth)) {
-//           return;
-//         }
-//       }
-
-//       /*
-//         AMOUNT
-//       */
-
-//       const amount =
-//         Number(
-//           String(row[4] || "")
-//             .replace(/[^0-9.]/g, "")
-//         ) || 0;
-
-//       const repayAmount =
-//         Number(
-//           String(row[13] || "")
-//             .replace(/[^0-9.]/g, "")
-//         ) || 0;
-
-//       const receivedAmount =
-//         Number(
-//           String(row[21] || "")
-//             .replace(/[^0-9.]/g, "")
-//         ) || 0;
-
-//       /*
-//         TYPE
-//       */
-
-//       const type = String(
-//         row[27] || ""
-//       )
-//         .trim()
-//         .toLowerCase();
-
-//       /*
-//         EXECUTIVE
-//       */
-
-//       const executive = String(
-//         row[28] || ""
-//       ).trim();
-
-//       if (!executive) return;
-
-//       /*
-//         SAME NAME MERGE
-//       */
-
-//       const key =
-//         executive.toLowerCase();
-
-//       /*
-//         CHECK TYPE
-//       */
-
-//       const isFresh =
-//         type.includes("fresh") ||
-//         type.includes("new");
-
-//       const isRepeat =
-//         type.includes("repeat");
-
-//       const target =
-//         isFresh
-//           ? freshMap
-//           : isRepeat
-//           ? repeatMap
-//           : null;
-
-//       if (!target) return;
-
-//       /*
-//         CREATE USER
-//       */
-
-//       if (!target[key]) {
-
-//         target[key] = {
-//           name: executive,
-//           cases: 0,
-//           amount: 0,
-//           repayAmount: 0,
-//           receivedAmount: 0
-//         };
-
-//       }
-
-//       /*
-//         ADD DATA
-//       */
-
-//       target[key].cases += 1;
-
-//       target[key].amount += amount;
-//       target[key].repayAmount += repayAmount;
-//       target[key].receivedAmount += receivedAmount;
-
-//     });
-
-//     /*
-//       SORT
-//     */
-
-//     const fresh = Object.values(
-//       freshMap
-//     )
-//       .map((item) => ({
-//         ...item,
-//         receivePercent: item.repayAmount
-//           ? Number(
-//               (
-//                 (item.receivedAmount /
-//                   item.repayAmount) *
-//                 100
-//               ).toFixed(2)
-//             )
-//           : 0
-//       }))
-//       .sort(
-//         (a, b) =>
-//           b.amount - a.amount
-//       );
-
-//     const repeat = Object.values(
-//       repeatMap
-//     )
-//       .map((item) => ({
-//         ...item,
-//         receivePercent: item.repayAmount
-//           ? Number(
-//               (
-//                 (item.receivedAmount /
-//                   item.repayAmount) *
-//                 100
-//               ).toFixed(2)
-//             )
-//           : 0
-//       }))
-//       .sort(
-//         (a, b) =>
-//           b.amount - a.amount
-//       );
-
-//     /*
-//       RESPONSE
-//     */
-
-//     res.json({
-//       fresh,
-//       repeat
-//     });
-
-//   } catch (err) {
-
-//     console.log(
-//       "SERVER ERROR =>",
-//       err.message
-//     );
-
-//     res.status(500).json({
-//       error: err.message
-//     });
-
-//   }
-
-// });
-
-// app.listen(PORT, () => {
-
-//   console.log(
-//     `Server Running On ${PORT}`
-//   );
-
-// });
-
-
-
-const express = require("express");
+    //     const selectedMonth = String(
+    //       req.query.month || "all"
+    //     )
+    //       .trim()
+    //       .toLowerCase();
+
+    //     console.log("SELECTED MONTH =>", selectedMonth);
+
+    //     const response = await axios.get(SHEET_URL);
+
+    //     const rows = Papa.parse(response.data, {
+    //       skipEmptyLines: true
+    //     }).data;
+
+    //     let freshMap = {};
+    //     let repeatMap = {};
+
+    //     rows.slice(1).forEach((row) => {
+
+    //       const rowMonth = String(
+    //         row[16] || ""
+    //       )
+    //         .trim()
+    //         .toLowerCase();
+
+    //       if (selectedMonth !== "all") {
+
+    //         const selected = selectedMonth
+    //           .replace(/['\s-]/g, "");
+
+    //         const month = rowMonth
+    //           .replace(/['\s-]/g, "");
+
+    //         if (!month.startsWith(selected)) {
+    //           return;
+    //         }
+    //       }
+
+    //       const amount =
+    //         Number(
+    //           String(row[4] || "")
+    //             .replace(/[^0-9.]/g, "")
+    //         ) || 0;
+
+    //       const repayAmount =
+    //         Number(
+    //           String(row[13] || "")
+    //             .replace(/[^0-9.]/g, "")
+    //         ) || 0;
+
+    //       const receivedAmount =
+    //         Number(
+    //           String(row[21] || "")
+    //             .replace(/[^0-9.]/g, "")
+    //         ) || 0;
+
+    //       const type = String(
+    //         row[27] || ""
+    //       )
+    //         .trim()
+    //         .toLowerCase();
+
+    //       const executive = String(
+    //         row[28] || ""
+    //       ).trim();
+
+    //       if (!executive) return;
+
+    //       const key = executive.toLowerCase();
+
+    //       const isFresh =
+    //         type.includes("fresh") ||
+    //         type.includes("new");
+
+    //       const isRepeat =
+    //         type.includes("repeat");
+
+    //       const target =
+    //         isFresh
+    //           ? freshMap
+    //           : isRepeat
+    //           ? repeatMap
+    //           : null;
+
+    //       if (!target) return;
+
+    //       if (!target[key]) {
+    //         target[key] = {
+    //           name: executive,
+    //           cases: 0,
+    //           amount: 0,
+    //           repayAmount: 0,
+    //           receivedAmount: 0
+    //         };
+    //       }
+
+    //       target[key].cases += 1;
+    //       target[key].amount += amount;
+    //       target[key].repayAmount += repayAmount;
+    //       target[key].receivedAmount += receivedAmount;
+    //     });
+
+    //     const fresh = Object.values(freshMap)
+    //       .map((item) => ({
+    //         ...item,
+    //         receivePercent:
+    //           item.repayAmount > 0
+    //             ? Number(
+    //                 (
+    //                   (item.receivedAmount /
+    //                     item.repayAmount) *
+    //                   100
+    //                 ).toFixed(2)
+    //               )
+    //             : 0
+    //       }))
+    //       .sort((a, b) => b.amount - a.amount);
+
+    //     const repeat = Object.values(repeatMap)
+    //       .map((item) => ({
+    //         ...item,
+    //         receivePercent:
+    //           item.repayAmount > 0
+    //             ? Number(
+    //                 (
+    //                   (item.receivedAmount /
+    //                     item.repayAmount) *
+    //                   100
+    //                 ).toFixed(2)
+    //               )
+    //             : 0
+    //       }))
+    //       .sort((a, b) => b.amount - a.amount);
+
+    //     res.json({
+    //       fresh,
+    //       repeat
+    //     });
+
+    //   } catch (err) {
+
+    //     console.log("SERVER ERROR =>", err);
+
+    //     res.status(500).json({
+    //       error: err.message
+    //     });
+    //   }
+    // });
+
+    // app.listen(PORT, () => {
+    //   console.log(`Server Running On ${PORT}`);
+    // });
+
+
+    const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const Papa = require("papaparse");
@@ -358,8 +184,42 @@ const app = express();
 app.use(cors());
 
 const PORT = process.env.PORT || 5000;
-
 const SHEET_URL = process.env.SHEET_URL;
+
+function parseDateValue(dateValue) {
+  if (!dateValue) return null;
+
+  const value = String(dateValue).trim();
+
+  if (/^\d+(\.\d+)?$/.test(value)) {
+    const serial = Number(value);
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const date = new Date(excelEpoch + serial * 24 * 60 * 60 * 1000);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  const parts = value.split(/[/-]/);
+
+  if (parts.length !== 3) return null;
+
+  const [first, second, third] = parts.map(Number);
+
+  if ([first, second, third].some(Number.isNaN)) {
+    return null;
+  }
+
+  if (String(parts[0]).length === 4) {
+    return new Date(first, second - 1, third);
+  }
+
+  return new Date(third, second - 1, first);
+}
+
+function endOfDay(date) {
+  const result = new Date(date);
+  result.setHours(23, 59, 59, 999);
+  return result;
+}
 
 app.get("/", (req, res) => {
   res.send("Leaderboard Backend Running");
@@ -367,25 +227,43 @@ app.get("/", (req, res) => {
 
 app.get("/api/leaderboard", async (req, res) => {
   try {
-
     const selectedMonth = String(
-      req.query.month || "all"
+    req.query.month || "all"
     )
       .trim()
       .toLowerCase();
 
-    console.log("SELECTED MONTH =>", selectedMonth);
+    const fromDate = parseDateValue(req.query.fromDate);
+    const toDate = parseDateValue(req.query.toDate);
+
+    console.log("MONTH =>", selectedMonth);
+    console.log("FROM =>", req.query.fromDate || "all");
+    console.log("TO =>", req.query.toDate || "all");
 
     const response = await axios.get(SHEET_URL);
 
     const rows = Papa.parse(response.data, {
-      skipEmptyLines: true
+      skipEmptyLines: true,
     }).data;
 
-    let freshMap = {};
-    let repeatMap = {};
+    const freshMap = {};
+    const repeatMap = {};
 
     rows.slice(1).forEach((row) => {
+
+      // Column O = Disburse Date
+      const caseDate = parseDateValue(row[14]);
+
+      // Date Range Filter
+      if (fromDate || toDate) {
+        if (
+          !caseDate ||
+          (fromDate && caseDate < fromDate) ||
+          (toDate && caseDate > endOfDay(toDate))
+        ) {
+          return; 
+        }
+      }
 
       const rowMonth = String(
         row[16] || ""
@@ -393,13 +271,17 @@ app.get("/api/leaderboard", async (req, res) => {
         .trim()
         .toLowerCase();
 
+      // Month Filter
       if (selectedMonth !== "all") {
+        const selected = selectedMonth.replace(
+          /['\s-]/g,
+          ""
+        );
 
-        const selected = selectedMonth
-          .replace(/['\s-]/g, "");
-
-        const month = rowMonth
-          .replace(/['\s-]/g, "");
+        const month = rowMonth.replace(
+          /['\s-]/g,
+          ""
+        );
 
         if (!month.startsWith(selected)) {
           return;
@@ -445,12 +327,11 @@ app.get("/api/leaderboard", async (req, res) => {
       const isRepeat =
         type.includes("repeat");
 
-      const target =
-        isFresh
-          ? freshMap
-          : isRepeat
-          ? repeatMap
-          : null;
+      const target = isFresh
+        ? freshMap
+        : isRepeat
+        ? repeatMap
+        : null;
 
       if (!target) return;
 
@@ -460,7 +341,7 @@ app.get("/api/leaderboard", async (req, res) => {
           cases: 0,
           amount: 0,
           repayAmount: 0,
-          receivedAmount: 0
+          receivedAmount: 0,
         };
       }
 
@@ -482,7 +363,7 @@ app.get("/api/leaderboard", async (req, res) => {
                   100
                 ).toFixed(2)
               )
-            : 0
+            : 0,
       }))
       .sort((a, b) => b.amount - a.amount);
 
@@ -498,21 +379,20 @@ app.get("/api/leaderboard", async (req, res) => {
                   100
                 ).toFixed(2)
               )
-            : 0
+            : 0,
       }))
       .sort((a, b) => b.amount - a.amount);
 
     res.json({
       fresh,
-      repeat
+      repeat,
     });
 
   } catch (err) {
-
-    console.log("SERVER ERROR =>", err);
+    console.error("SERVER ERROR =>", err);
 
     res.status(500).json({
-      error: err.message
+      error: err.message,
     });
   }
 });

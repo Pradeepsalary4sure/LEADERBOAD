@@ -144,6 +144,13 @@ import bankLogo from "./assets/logo.png";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = import.meta.env.DEV
+  ? "http://localhost:5000"
+  : "https://leaderboad-backend.onrender.com";
+
+const MIN_DISBURSE_DATE = "2025-10-25";
+const MAX_DISBURSE_DATE = "2026-05-23";
+
 interface Data {
   name: string;
   cases: number;
@@ -168,59 +175,128 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchLeaderboard = () => {
-    setLoading(true);
+  // const fetchLeaderboard = () => {
+  //   setLoading(true);
 
-    const query = new URLSearchParams();
-    if (month !== "All") query.set("month", month);
+  //   const query = new URLSearchParams();
+  //   if (month !== "All") query.set("month", month);
 
-    axios
-      .get(
-        `https://leaderboad-backend.onrender.com/api/leaderboard?${query.toString()}`
-      )
-      .then((res) => {
-        setFresh(res.data.fresh);
-        setRepeat(res.data.repeat);
-        setLastUpdated(new Date());
-      })
-      .catch((err) => {
-        console.error("API Error:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+  //   axios
+  //     .get(
+  //       `https://leaderboad-backend.onrender.com/api/leaderboard?${query.toString()}`
+  //     )
+  //     .then((res) => {
+  //       setFresh(res.data.fresh);
+  //       setRepeat(res.data.repeat);
+  //       setLastUpdated(new Date());
+  //     })
+  //     .catch((err) => {
+  //       console.error("API Error:", err);
+  //     })
+  //     .finally(() => {
+  //       setLoading(false);
+  //     });
+  // };
+
+
+const fetchLeaderboard = () => {
+  setLoading(true);
+
+  const query = new URLSearchParams();
+
+  if (month !== "All") {
+    query.set("month", month);
+  }
+
+  if (appliedFrom) {
+    query.set("fromDate", appliedFrom);
+  }
+
+  if (appliedTo) {
+    query.set("toDate", appliedTo);
+  }
+
+  axios
+    .get(
+      `${API_BASE_URL}/api/leaderboard?${query.toString()}`
+    )
+    .then((res) => {
+      setFresh(res.data.fresh);
+      setRepeat(res.data.repeat);
+      setLastUpdated(new Date());
+    })
+    .catch((err) => {
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+};
+
+
+
+  // useEffect(() => {
+  //   fetchLeaderboard();
+  // }, [month]);
+
 
   useEffect(() => {
-    fetchLeaderboard();
-  }, [month]);
+  fetchLeaderboard();
+}, [month, appliedFrom, appliedTo]);
 
-  const applyDateRange = () => {
-    setAppliedFrom(dateFrom);
-    setAppliedTo(dateTo);
-  };
+  // const applyDateRange = () => {
+  //   setAppliedFrom(dateFrom);
+  //   setAppliedTo(dateTo);
+  // };
 
-  const filterLeaderboard = (data: Data[]) =>
-    data.filter((item) => {
-      const matchesName = item.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+const applyDateRange = () => {
+  setAppliedFrom(dateFrom);
+  setAppliedTo(dateTo);
+  setMonth("All");
+};
 
-      const itemDate = item.date ? new Date(item.date) : null;
-      const fromDate = appliedFrom ? new Date(appliedFrom) : null;
-      const toDate = appliedTo ? new Date(appliedTo) : null;
+  // const filterLeaderboard = (data: Data[]) =>
+  //   data.filter((item) => {
+  //     const matchesName = item.name
+  //       .toLowerCase()
+  //       .includes(searchTerm.toLowerCase());
 
-      const matchesDate =
-        (!fromDate || (itemDate && itemDate >= fromDate)) &&
-        (!toDate || (itemDate && itemDate <= toDate));
+  //     const itemDate = item.date ? new Date(item.date) : null;
+  //     const fromDate = appliedFrom ? new Date(appliedFrom) : null;
+  //     const toDate = appliedTo ? new Date(appliedTo) : null;
 
-      return matchesName && matchesDate;
-    });
+  //     const matchesDate =
+  //       (!fromDate || (itemDate && itemDate >= fromDate)) &&
+  //       (!toDate || (itemDate && itemDate <= toDate));
 
-  const filteredFresh = filterLeaderboard(fresh);
-  const filteredRepeat = filterLeaderboard(repeat);
-  const showFresh = viewMode === "All" || viewMode === "Fresh";
-  const showRepeat = viewMode === "All" || viewMode === "Repeat";
+  //     return matchesName && matchesDate;
+  //   });
+
+  // const filteredFresh = filterLeaderboard(fresh);
+  // const filteredRepeat = filterLeaderboard(repeat);
+  // const showFresh = viewMode === "All" || viewMode === "Fresh";
+  // const showRepeat = viewMode === "All" || viewMode === "Repeat";
+
+
+const filteredFresh = fresh.filter((item) =>
+  item.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const filteredRepeat = repeat.filter((item) =>
+  item.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const showFresh =
+  viewMode === "All" ||
+  viewMode === "Fresh";
+
+const showRepeat =
+  viewMode === "All" ||
+  viewMode === "Repeat";
+
+
+
+
   // ==========================
   // TOP 3
   // ==========================
@@ -242,7 +318,7 @@ function App() {
 
         <div className="top-cards">
 
-          {renderOrder.map((originalIndex, position) => {
+          {renderOrder.map((originalIndex) => {
             const item = top3[originalIndex];
             return (
               <div
@@ -417,7 +493,7 @@ function App() {
       <section className="dashboard-banner">
         <img src={heroImage} alt="Dashboard" className="dashboard-image" />
         <div className="dashboard-title">
-          <h1>Section Leaderboard Dashboard</h1>
+          <h1>Sanction Leaderboard Dashboard</h1>
           <p>Centered high-value ranking view with fresh and repeat performance.</p>
         </div>
       </section>
@@ -434,6 +510,9 @@ function App() {
                 onChange={(e) => setMonth(e.target.value)}
               >
                 <option value="All">All Months</option>
+                <option value="Oct'25">Oct'25</option>
+                <option value="Nov'25">Nov'25</option>
+                <option value="Dec'25">Dec'25</option>
                 <option value="Jan'26">Jan'26</option>
                 <option value="Feb'26">Feb'26</option>
                 <option value="Mar'26">Mar'26</option>
@@ -466,6 +545,8 @@ function App() {
                 <input
                   className="date-input"
                   type="date"
+                  min={MIN_DISBURSE_DATE}
+                  max={MAX_DISBURSE_DATE}
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
                 />
@@ -473,6 +554,8 @@ function App() {
                 <input
                   className="date-input"
                   type="date"
+                  min={dateFrom || MIN_DISBURSE_DATE}
+                  max={MAX_DISBURSE_DATE}
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
                 />
