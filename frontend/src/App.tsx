@@ -139,6 +139,8 @@
 
 
 import "./App.css";
+import heroImage from "./assets/image.png";
+import bankLogo from "./assets/logo.png";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
@@ -149,34 +151,76 @@ interface Data {
   repayAmount: number;
   receivedAmount: number;
   receivePercent: number;
+  date?: string;
 }
 
 function App() {
 
   const [fresh, setFresh] = useState<Data[]>([]);
   const [repeat, setRepeat] = useState<Data[]>([]);
-
-  // MONTH FILTER
   const [month, setMonth] = useState("All");
-useEffect(() => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  axios
-    .get(
-      `https://leaderboad-backend.onrender.com/api/leaderboard?month=${month}`
-    )
-    .then((res) => {
+  const fetchLeaderboard = () => {
+    setLoading(true);
 
-      setFresh(res.data.fresh);
-      setRepeat(res.data.repeat);
+    const query = new URLSearchParams();
+    if (month !== "All") query.set("month", month);
 
-    })
-    .catch((err) => {
+    axios
+      .get(
+        `https://leaderboad-backend.onrender.com/api/leaderboard?${query.toString()}`
+      )
+      .then((res) => {
+        setFresh(res.data.fresh);
+        setRepeat(res.data.repeat);
+        setLastUpdated(new Date());
+      })
+      .catch((err) => {
+        console.error("API Error:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-      console.error("API Error:", err);
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [month]);
 
+  const applyDateRange = () => {
+    setAppliedFrom(dateFrom);
+    setAppliedTo(dateTo);
+  };
+
+  const filterLeaderboard = (data: Data[]) =>
+    data.filter((item) => {
+      const matchesName = item.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      const itemDate = item.date ? new Date(item.date) : null;
+      const fromDate = appliedFrom ? new Date(appliedFrom) : null;
+      const toDate = appliedTo ? new Date(appliedTo) : null;
+
+      const matchesDate =
+        (!fromDate || (itemDate && itemDate >= fromDate)) &&
+        (!toDate || (itemDate && itemDate <= toDate));
+
+      return matchesName && matchesDate;
     });
 
-}, [month]);
+  const filteredFresh = filterLeaderboard(fresh);
+  const filteredRepeat = filterLeaderboard(repeat);
+  const showFresh = viewMode === "All" || viewMode === "Fresh";
+  const showRepeat = viewMode === "All" || viewMode === "Repeat";
   // ==========================
   // TOP 3
   // ==========================
@@ -188,6 +232,7 @@ useEffect(() => {
   ) => {
 
     const top3 = data.slice(0, 3);
+    const renderOrder = [1, 0, 2].filter((index) => index < top3.length);
 
     return (
 
@@ -197,42 +242,43 @@ useEffect(() => {
 
         <div className="top-cards">
 
-          {top3.map((item, i) => (
+          {renderOrder.map((originalIndex, position) => {
+            const item = top3[originalIndex];
+            return (
+              <div
+                key={originalIndex}
+                className={`top-card ${
+                  originalIndex === 0
+                    ? "gold"
+                    : originalIndex === 1
+                    ? "silver"
+                    : "bronze"
+                }`}
+              >
 
-            <div
-              key={i}
-              className={`top-card ${
-                i === 0
-                  ? "gold"
-                  : i === 1
-                  ? "silver"
-                  : "bronze"
-              }`}
-            >
+                <div className="medal">
+                  {originalIndex === 0
+                    ? "🥇"
+                    : originalIndex === 1
+                    ? "🥈"
+                    : "🥉"}
+                </div>
 
-              <div className="medal">
-                {i === 0
-                  ? "🥇"
-                  : i === 1
-                  ? "🥈"
-                  : "🥉"}
+                <h3>{originalIndex + 1} PLACE</h3>
+
+                <h4>{item.name}</h4>
+
+                <p>
+                  ₹ {item.amount.toLocaleString()}
+                </p>
+
+                <span>
+                  {item.cases} Cases
+                </span>
+
               </div>
-
-              <h3>{i + 1} PLACE</h3>
-
-              <h4>{item.name}</h4>
-
-              <p>
-                ₹ {item.amount.toLocaleString()}
-              </p>
-
-              <span>
-                {item.cases} Cases
-              </span>
-
-            </div>
-
-          ))}
+            );
+          })}
 
         </div>
 
@@ -337,121 +383,142 @@ useEffect(() => {
   );
 
   return (
-
     <div className="app">
+      <header className="app-header">
+        <div className="logo-block">
+          <div className="logo-mark">
+            <img src={bankLogo} alt="Bank logo" />
+          </div>
+          <div className="logo-copy">
+            <strong>Minutes Loan</strong>
+            <span>Smart Collections Dashboard</span>
+          </div>
+        </div>
 
-      <h1>🏆 LEADERBOARD</h1>
+        <div className="header-actions">
+          <button
+            className="refresh-button"
+            onClick={fetchLeaderboard}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+          {lastUpdated && (
+            <div className="updated-info">
+              Last refreshed: {lastUpdated.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
+          )}
+        </div>
+      </header>
 
-      <p>
-        Fresh vs Repeat Performance
-      </p>
+      <section className="dashboard-banner">
+        <img src={heroImage} alt="Dashboard" className="dashboard-image" />
+        <div className="dashboard-title">
+          <h1>Section Leaderboard Dashboard</h1>
+          <p>Centered high-value ranking view with fresh and repeat performance.</p>
+        </div>
+      </section>
 
-      {/* MONTH FILTER */}
-{/* MONTH FILTER */}
+      <div className="split-layout">
+        <aside className="side-panel">
+          <div className="filter-box">
+            <h3>Custom Filters</h3>
+            <label>
+              Month
+              <select
+                className="month-select"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              >
+                <option value="All">All Months</option>
+                <option value="Jan'26">Jan'26</option>
+                <option value="Feb'26">Feb'26</option>
+                <option value="Mar'26">Mar'26</option>
+                <option value="Apr'26">Apr'26</option>
+                <option value="May'26">May'26</option>
+                <option value="Jun'26">Jun'26</option>
+                <option value="Jul'26">Jul'26</option>
+                <option value="Aug'26">Aug'26</option>
+                <option value="Sep'26">Sep'26</option>
+                <option value="Oct'26">Oct'26</option>
+                <option value="Nov'26">Nov'26</option>
+                <option value="Dec'26">Dec'26</option>
+              </select>
+            </label>
 
-<div className="filter-box">
+            <label>
+              Executive Name
+              <input
+                className="search-input"
+                type="text"
+                placeholder="Search by name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </label>
 
-  <select
-    className="month-select"
-    value={month}
-    onChange={(e)=>
-      setMonth(e.target.value)
-    }
-  >
+            <label>
+              Date Range
+              <div className="date-row">
+                <input
+                  className="date-input"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+                <span className="date-separator">to</span>
+                <input
+                  className="date-input"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                className="apply-button"
+                onClick={applyDateRange}
+              >
+                Apply
+              </button>
+            </label>
 
-    <option value="All">
-      All Months
-    </option>
+            <label>
+              Board View
+              <select
+                className="month-select"
+                value={viewMode}
+                onChange={(e) => setViewMode(e.target.value)}
+              >
+                <option value="All">Show All</option>
+                <option value="Fresh">Fresh Only</option>
+                <option value="Repeat">Repeat Only</option>
+              </select>
+            </label>
+          </div>
 
-    <option value="Jan'26">
-      Jan'26
-    </option>
+          {/* <div className="side-note">
+            <h4>Tip</h4>
+            <p>Use custom filters to narrow the leaderboard by month, name, or board type.</p>
+          </div> */}
+        </aside>
 
-    <option value="Feb'26">
-      Feb'26
-    </option>
+        <main className="main-panel">
+          <div className="top-section">
+            {showFresh && renderTop3(filteredFresh, "FRESH TOP 3", "fresh")}
+            {showRepeat && renderTop3(filteredRepeat, "REPEAT TOP 3", "repeat")}
+          </div>
 
-    <option value="Mar'26">
-      Mar'26
-    </option>
-
-    <option value="Apr'26">
-      Apr'26
-    </option>
-
-    <option value="May'26">
-      May'26
-    </option>
-
-    <option value="Jun'26">
-      Jun'26
-    </option>
-
-    <option value="Jul'26">
-      Jul'26
-    </option>
-
-    <option value="Aug'26">
-      Aug'26
-    </option>
-
-    <option value="Sep'26">
-      Sep'26
-    </option>
-
-    <option value="Oct'26">
-      Oct'26
-    </option>
-
-    <option value="Nov'26">
-      Nov'26
-    </option>
-
-    <option value="Dec'26">
-      Dec'26
-    </option>
-
-  </select>
-
-</div>
-      {/* TOP 3 */}
-
-      <div className="top-section">
-
-        {renderTop3(
-          fresh,
-          "FRESH TOP 3",
-          "fresh"
-        )}
-
-        {renderTop3(
-          repeat,
-          "REPEAT TOP 3",
-          "repeat"
-        )}
-
+          <div className="container">
+            {showFresh && renderTable(filteredFresh, "🔥 Fresh Performance", "fresh")}
+            {showRepeat && renderTable(filteredRepeat, "♻️ Repeat Performance", "repeat")}
+          </div>
+        </main>
       </div>
-
-      {/* TABLE */}
-
-      <div className="container">
-
-        {renderTable(
-          fresh,
-          "FRESH PERFORMANCE",
-          "fresh"
-        )}
-
-        {renderTable(
-          repeat,
-          "REPEAT PERFORMANCE",
-          "repeat"
-        )}
-
-      </div>
-
     </div>
-
   );
 
 }
