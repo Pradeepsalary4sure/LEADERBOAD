@@ -364,6 +364,8 @@ app.get("/api/leaderboard", async (req, res) => {
                 ).toFixed(2)
               )
             : 0,
+
+            
       }))
       .sort((a, b) => b.amount - a.amount);
 

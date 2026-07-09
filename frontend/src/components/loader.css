@@ -1,0 +1,407 @@
+/* ===========================
+   PREMIUM LOADER
+===========================*/
+
+.loader-screen{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow:hidden;
+    background:linear-gradient(135deg,#07111f,#0b1f38,#07111f);
+    z-index:999999;
+}
+
+/* Background */
+
+.background-blur{
+    position:absolute;
+    width:1200px;
+    height:1200px;
+    border-radius:50%;
+    background:radial-gradient(circle,#2563eb55,transparent 70%);
+    animation:pulseBg 6s ease-in-out infinite;
+    filter:blur(70px);
+}
+
+@keyframes pulseBg{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.25);
+
+}
+
+}
+
+/* Card */
+
+.loader-card{
+
+position:relative;
+
+width:470px;
+
+padding:50px;
+
+border-radius:28px;
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.12);
+
+text-align:center;
+
+box-shadow:0 25px 80px rgba(0,0,0,.45);
+
+z-index:5;
+
+animation:popup .6s ease;
+
+}
+
+@keyframes popup{
+
+from{
+
+transform:translateY(40px) scale(.9);
+
+opacity:0;
+
+}
+
+to{
+
+transform:none;
+
+opacity:1;
+
+}
+
+}
+
+/* Rings */
+
+.logo-circle{
+
+position:relative;
+
+width:150px;
+
+height:150px;
+
+margin:auto;
+
+}
+
+.ring{
+
+position:absolute;
+
+inset:0;
+
+border-radius:50%;
+
+}
+
+.ring.one{
+
+border:4px solid #2563eb;
+
+animation:spin 5s linear infinite;
+
+box-shadow:0 0 25px #2563eb;
+
+}
+
+.ring.two{
+
+border:4px dashed #38bdf8;
+
+transform:scale(.82);
+
+animation:spinReverse 7s linear infinite;
+
+}
+
+@keyframes spin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+@keyframes spinReverse{
+
+100%{
+
+transform:scale(.82) rotate(-360deg);
+
+}
+
+}
+
+.center-logo{
+
+position:absolute;
+
+top:50%;
+
+left:50%;
+
+transform:translate(-50%,-50%);
+
+width:90px;
+
+height:90px;
+
+border-radius:50%;
+
+background:linear-gradient(135deg,#2563eb,#06b6d4);
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-size:42px;
+
+color:white;
+
+box-shadow:0 0 35px rgba(37,99,235,.8);
+
+animation:logoPulse 2s infinite;
+
+}
+
+@keyframes logoPulse{
+
+50%{
+
+transform:translate(-50%,-50%) scale(1.08);
+
+}
+
+}
+
+.loader-card h1{
+
+margin-top:30px;
+
+font-size:34px;
+
+color:white;
+
+font-weight:700;
+
+}
+
+.loader-card h2{
+
+margin-top:8px;
+
+font-size:17px;
+
+font-weight:500;
+
+color:#cbd5e1;
+
+}
+
+.progress-number{
+
+margin-top:30px;
+
+font-size:46px;
+
+font-weight:800;
+
+color:#38bdf8;
+
+text-shadow:0 0 18px #38bdf8;
+
+}
+
+/* Progress */
+
+.progress-bar{
+
+margin-top:20px;
+
+height:14px;
+
+background:rgba(255,255,255,.12);
+
+border-radius:100px;
+
+overflow:hidden;
+
+}
+
+.progress-fill{
+
+height:100%;
+
+background:linear-gradient(90deg,#2563eb,#38bdf8,#06b6d4);
+
+border-radius:100px;
+
+transition:width .25s linear;
+
+box-shadow:0 0 18px #38bdf8;
+
+}
+
+.loading-message{
+
+margin-top:28px;
+
+font-size:18px;
+
+color:white;
+
+animation:blink 1.2s infinite;
+
+}
+
+@keyframes blink{
+
+50%{
+
+opacity:.45;
+
+}
+
+}
+
+/* Floating particles */
+
+.particles{
+
+position:absolute;
+
+inset:0;
+
+overflow:hidden;
+
+}
+
+.particles span{
+
+position:absolute;
+
+display:block;
+
+width:7px;
+
+height:7px;
+
+background:#38bdf8;
+
+border-radius:50%;
+
+opacity:.35;
+
+animation:float 12s linear infinite;
+
+}
+
+.particles span:nth-child(odd){
+
+background:#60a5fa;
+
+}
+
+.particles span:nth-child(1){left:5%;animation-duration:8s;}
+.particles span:nth-child(2){left:12%;animation-duration:11s;}
+.particles span:nth-child(3){left:20%;animation-duration:7s;}
+.particles span:nth-child(4){left:30%;animation-duration:9s;}
+.particles span:nth-child(5){left:42%;animation-duration:13s;}
+.particles span:nth-child(6){left:55%;animation-duration:10s;}
+.particles span:nth-child(7){left:67%;animation-duration:9s;}
+.particles span:nth-child(8){left:80%;animation-duration:12s;}
+.particles span:nth-child(9){left:90%;animation-duration:8s;}
+.particles span:nth-child(10){left:96%;animation-duration:14s;}
+
+@keyframes float{
+
+0%{
+
+transform:translateY(100vh) scale(.5);
+
+opacity:0;
+
+}
+
+20%{
+
+opacity:.5;
+
+}
+
+100%{
+
+transform:translateY(-150px) scale(1.2);
+
+opacity:0;
+
+}
+
+}
+
+/* Responsive */
+
+@media(max-width:600px){
+
+.loader-card{
+
+width:90%;
+
+padding:30px;
+
+}
+
+.loader-card h1{
+
+font-size:28px;
+
+}
+
+.progress-number{
+
+font-size:38px;
+
+}
+
+.logo-circle{
+
+width:120px;
+
+height:120px;
+
+}
+
+.center-logo{
+
+width:70px;
+
+height:70px;
+
+font-size:32px;
+
+}
+
+}
