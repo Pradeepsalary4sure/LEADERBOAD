@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "./Loader.css";
+import "./loader.css";
 
 const messages = [
   "Connecting to Server...",
