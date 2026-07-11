@@ -412,7 +412,6 @@ p {
   font-weight: 600;
   letter-spacing: 0.5px;
 }
-
 .header-actions {
   display: flex;
   flex-direction: column;
@@ -2265,8 +2264,52 @@ input[type="text"]::placeholder {
   animation: blink 0.8s infinite;
 }
 
+<<<<<<< HEAD
 @keyframes blink {
   50% {
     opacity: 0.4;
   }
 }
+=======
+@keyframes progressMove{
+
+0%{
+
+margin-left:-40%;
+
+}
+
+100%{
+
+margin-left:100%;
+
+}
+
+}
+
+.loader-percent{
+
+display:block;
+
+margin-top:18px;
+
+font-weight:700;
+
+font-size:16px;
+
+color:#2563eb;
+
+animation:blink .8s infinite;
+
+}
+
+@keyframes blink{
+
+50%{
+
+opacity:.4;
+
+}
+
+} */ 
+>>>>>>> f1bd28e9dc768befc5e0b4faa23ab6d635a94db3
