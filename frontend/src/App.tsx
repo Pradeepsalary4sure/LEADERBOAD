@@ -4,9 +4,16 @@ import "./App.css";
 import heroImage from "./assets/image.png";
 import bankLogo from "./assets/image.png";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Papa from "papaparse";
 import Loader from "./components/loader";
+
+interface LeaderboardItem {
+  name: string;
+  repayAmount?: number;
+  actualRepayAmount?: number;
+  [key: string]: unknown;
+}
 
 
 const API_BASE_URL = import.meta.env.DEV
@@ -68,7 +75,7 @@ const API_BASE_URL = import.meta.env.DEV
     // ============================
     // FETCH LEADERBOARD
     // ============================
-    const fetchLeaderboard = () => {
+ const fetchLeaderboard = useCallback(async () => {
   setLoading(true);
 
   const query = new URLSearchParams();
@@ -89,19 +96,18 @@ const API_BASE_URL = import.meta.env.DEV
     .get(`${API_BASE_URL}/api/leaderboard?${query.toString()}`)
     .then((res) => {
       setFresh(
-        res.data.fresh.map((item: any) => ({
+        res.data.fresh.map((item: LeaderboardItem) => ({
           ...item,
           repayAmount: item.repayAmount ?? item.actualRepayAmount ?? 0,
         }))
       );
 
       setRepeat(
-        res.data.repeat.map((item: any) => ({
+        res.data.repeat.map((item: LeaderboardItem) => ({
           ...item,
           repayAmount: item.repayAmount ?? item.actualRepayAmount ?? 0,
         }))
       );
-
       setLastUpdated(new Date());
     })
     .catch((err) => {
@@ -110,12 +116,11 @@ const API_BASE_URL = import.meta.env.DEV
     .finally(() => {
       setLoading(false);
     });
-};
+  }, [month, appliedFrom, appliedTo]);
 
-    useEffect(() => {
-      fetchLeaderboard();
-    }, [month, appliedFrom, appliedTo]);
-
+          useEffect(() => {
+        fetchLeaderboard();
+      }, [fetchLeaderboard]);
   const applyDateRange = () => {
     setAppliedFrom(dateFrom);
     setAppliedTo(dateTo);

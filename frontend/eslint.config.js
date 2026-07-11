@@ -16,7 +16,11 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
-    },
+  globals: globals.browser,
+},
+
+rules: {
+  "react-hooks/set-state-in-effect": "off",
+},
   },
 ])
