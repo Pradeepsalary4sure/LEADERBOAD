@@ -1,8 +1,6 @@
-
-
 import "./App.css";
-import heroImage from "./assets/image.png";
-import bankLogo from "./assets/image.png";
+import heroImage from "./assets/logo.png";
+import bankLogo from "./assets/logo.png";
 import axios from "axios";
 import { useEffect, useState, useCallback } from "react";
 import Papa from "papaparse";
@@ -22,8 +20,8 @@ const API_BASE_URL = import.meta.env.DEV
 
   const MIN_DISBURSE_DATE = "2025-10-25";
   const MAX_DISBURSE_DATE = "2030-12-31";
-  const FRESH_TARGET = 2.5 * 10000000;
-  const REPEAT_TARGET = 2.5 * 10000000;
+  const FRESH_TARGET = 5 * 10000000;
+  const REPEAT_TARGET = 5 * 10000000;
 
   // ============================
   // HARDCODED CREDENTIALS (Demo)
@@ -65,6 +63,8 @@ const API_BASE_URL = import.meta.env.DEV
     const [dateTo, setDateTo] = useState("");
     const [appliedFrom, setAppliedFrom] = useState("");
     const [appliedTo, setAppliedTo] = useState("");
+    const [sheetDateRange, setSheetDateRange] = useState<{ min: string; max: string } | null>(null);
+    const [matchedRows, setMatchedRows] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const currentUser = "User";
@@ -80,7 +80,9 @@ const API_BASE_URL = import.meta.env.DEV
 
   const query = new URLSearchParams();
 
-  if (month !== "All") {
+  const hasDateFilter = Boolean(appliedFrom || appliedTo);
+
+  if (month !== "All" && !hasDateFilter) {
     query.set("month", month);
   }
 
@@ -108,6 +110,15 @@ const API_BASE_URL = import.meta.env.DEV
           repayAmount: item.repayAmount ?? item.actualRepayAmount ?? 0,
         }))
       );
+
+      if (res.data.meta?.sheetDateRange) {
+        setSheetDateRange(res.data.meta.sheetDateRange);
+      }
+      setMatchedRows(
+        typeof res.data.meta?.matchedRows === "number"
+          ? res.data.meta.matchedRows
+          : null
+      );
       setLastUpdated(new Date());
     })
     .catch((err) => {
@@ -122,9 +133,33 @@ const API_BASE_URL = import.meta.env.DEV
         fetchLeaderboard();
       }, [fetchLeaderboard]);
   const applyDateRange = () => {
-    setAppliedFrom(dateFrom);
-    setAppliedTo(dateTo);
+    if (!dateFrom && !dateTo) {
+      setAppliedFrom("");
+      setAppliedTo("");
+      return;
+    }
+
+    const from = dateFrom || dateTo;
+    const to = dateTo || dateFrom;
+
+    setAppliedFrom(from);
+    setAppliedTo(to);
     setMonth("All");
+  };
+
+  const clearDateRange = () => {
+    setDateFrom("");
+    setDateTo("");
+    setAppliedFrom("");
+    setAppliedTo("");
+    setMatchedRows(null);
+  };
+
+  const handleMonthChange = (value: string) => {
+    setMonth(value);
+    if (value !== "All") {
+      clearDateRange();
+    }
   };
 
     const filteredFresh = fresh.filter((item) =>
@@ -134,6 +169,21 @@ const API_BASE_URL = import.meta.env.DEV
     const filteredRepeat = repeat.filter((item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const hasActiveDateFilter = Boolean(appliedFrom || appliedTo);
+    const noDataForDateFilter =
+      hasActiveDateFilter &&
+      !loading &&
+      filteredFresh.length === 0 &&
+      filteredRepeat.length === 0;
+
+    const formatDisplayDate = (value: string) => {
+      const [year, month, day] = value.split("-");
+      if (!year || !month || !day) return value;
+      return `${day}-${month}-${year}`;
+    };
+
+    const maxSelectableDate = sheetDateRange?.max || MAX_DISBURSE_DATE;
 
     const showFresh = viewMode === "All" || viewMode === "Fresh";
     const showRepeat = viewMode === "All" || viewMode === "Repeat";
@@ -553,7 +603,14 @@ const API_BASE_URL = import.meta.env.DEV
               </thead>
 
               <tbody>
-                {data.map((item, i) => (
+                {data.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="empty-table-message">
+                      Is date range par koi data nahi mila.
+                    </td>
+                  </tr>
+                ) : (
+                  data.map((item, i) => (
                   <tr key={i}>
                     <td>
                       {i === 0
@@ -585,7 +642,8 @@ const API_BASE_URL = import.meta.env.DEV
                       {item.receivePercent.toFixed(2)}%
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
@@ -790,7 +848,7 @@ const API_BASE_URL = import.meta.env.DEV
                   <select
                     className="month-select"
                     value={month}
-                    onChange={(e) => setMonth(e.target.value)}
+                    onChange={(e) => handleMonthChange(e.target.value)}
                   >
                     <option value="All">All Months</option>
                     <option value="Oct'25">Oct'25</option>
@@ -829,7 +887,7 @@ const API_BASE_URL = import.meta.env.DEV
                         className="date-input"
                         type="date"
                         min={MIN_DISBURSE_DATE}
-                        max={MAX_DISBURSE_DATE}
+                        max={maxSelectableDate}
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
                       />
@@ -838,18 +896,51 @@ const API_BASE_URL = import.meta.env.DEV
                         className="date-input"
                         type="date"
                         min={dateFrom || MIN_DISBURSE_DATE}
-                        max={MAX_DISBURSE_DATE}
+                        max={maxSelectableDate}
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
                       />
                     </div>
-                    <button
-                      type="button"
-                      className="apply-button"
-                      onClick={applyDateRange}
-                    >
-                      Apply
-                    </button>
+                    <div className="date-actions">
+                      <button
+                        type="button"
+                        className="apply-button"
+                        onClick={applyDateRange}
+                      >
+                        Apply
+                      </button>
+                      {(dateFrom || dateTo || appliedFrom || appliedTo) && (
+                        <button
+                          type="button"
+                          className="clear-button"
+                          onClick={clearDateRange}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {sheetDateRange && (
+                      <p className="date-range-hint">
+                        Available data: {formatDisplayDate(sheetDateRange.min)} to{" "}
+                        {formatDisplayDate(sheetDateRange.max)}
+                      </p>
+                    )}
+                    {(appliedFrom || appliedTo) && (
+                      <p className="active-date-filter">
+                        Showing: {appliedFrom === appliedTo
+                          ? formatDisplayDate(appliedFrom)
+                          : `${formatDisplayDate(appliedFrom || appliedTo)} to ${formatDisplayDate(appliedTo || appliedFrom)}`}
+                        {matchedRows !== null && ` (${matchedRows} cases)`}
+                      </p>
+                    )}
+                    {noDataForDateFilter && (
+                      <p className="date-filter-warning">
+                        Is date par sheet mein koi record nahi hai.
+                        {sheetDateRange
+                          ? ` Data ${formatDisplayDate(sheetDateRange.min)} se ${formatDisplayDate(sheetDateRange.max)} tak available hai.`
+                          : ""}
+                      </p>
+                    )}
                   </label>
 
                 <label>
@@ -869,6 +960,18 @@ const API_BASE_URL = import.meta.env.DEV
           </aside>
 
           <main className="main-panel">
+            {noDataForDateFilter && (
+              <div className="no-data-banner">
+                Selected date range mein koi data nahi mila. Kripya wahi date select karein
+                jis din sheet mein Disburse Date hai.
+                {sheetDateRange && (
+                  <>
+                    {" "}
+                    Latest available date: {formatDisplayDate(sheetDateRange.max)}
+                  </>
+                )}
+              </div>
+            )}
             <div className="top-section">
               {showFresh && renderTop3(filteredFresh, "FRESH TOP 3", "fresh")}
               {showRepeat && renderTop3(filteredRepeat, "REPEAT TOP 3", "repeat")}

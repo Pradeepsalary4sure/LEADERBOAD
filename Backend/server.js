@@ -186,39 +186,65 @@ app.use(cors());
 const PORT = process.env.PORT || 5000;
 const SHEET_URL = process.env.SHEET_URL;
 
-function parseDateValue(dateValue) {
-  if (!dateValue) return null;
+function toDateKey(dateValue) {
+  if (dateValue == null || dateValue === "") return null;
 
-  const value = String(dateValue).trim();
+  const value = String(dateValue).trim().split("T")[0];
 
   if (/^\d+(\.\d+)?$/.test(value)) {
     const serial = Number(value);
     const excelEpoch = Date.UTC(1899, 11, 30);
     const date = new Date(excelEpoch + serial * 24 * 60 * 60 * 1000);
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   const parts = value.split(/[/-]/);
-
   if (parts.length !== 3) return null;
 
-  const [first, second, third] = parts.map(Number);
-
-  if ([first, second, third].some(Number.isNaN)) {
+  const [first, second, third] = parts.map((part) => part.trim());
+  if ([first, second, third].some((part) => !/^\d+$/.test(part))) {
     return null;
   }
 
-  if (String(parts[0]).length === 4) {
-    return new Date(first, second - 1, third);
+  if (first.length === 4) {
+    return `${first}-${second.padStart(2, "0")}-${third.padStart(2, "0")}`;
   }
 
-  return new Date(third, second - 1, first);
+  return `${third}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`;
 }
 
-function endOfDay(date) {
-  const result = new Date(date);
-  result.setHours(23, 59, 59, 999);
-  return result;
+function parseDateValue(dateValue) {
+  const key = toDateKey(dateValue);
+  if (!key) return null;
+
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function normalizeDateRange(fromDate, toDate) {
+  const fromKey = toDateKey(fromDate);
+  const toKey = toDateKey(toDate);
+
+  let from = fromKey;
+  let to = toKey;
+
+  if (from && !to) {
+    to = from;
+  } else if (to && !from) {
+    from = to;
+  }
+
+  return { from, to };
+}
+
+function isDateInRange(caseKey, fromKey, toKey) {
+  if (!caseKey) return false;
+  if (fromKey && caseKey < fromKey) return false;
+  if (toKey && caseKey > toKey) return false;
+  return true;
 }
 
 app.get("/", (req, res) => {
@@ -233,12 +259,17 @@ app.get("/api/leaderboard", async (req, res) => {
       .trim()
       .toLowerCase();
 
-    const fromDate = parseDateValue(req.query.fromDate);
-    const toDate = parseDateValue(req.query.toDate);
+    const parsedFrom = req.query.fromDate || null;
+    const parsedTo = req.query.toDate || null;
+    const { from: fromDateKey, to: toDateKey } = normalizeDateRange(
+      parsedFrom,
+      parsedTo
+    );
+    const hasDateFilter = Boolean(fromDateKey || toDateKey);
 
     console.log("MONTH =>", selectedMonth);
-    console.log("FROM =>", req.query.fromDate || "all");
-    console.log("TO =>", req.query.toDate || "all");
+    console.log("FROM =>", fromDateKey || "all");
+    console.log("TO =>", toDateKey || "all");
 
     const response = await axios.get(SHEET_URL);
 
@@ -248,20 +279,28 @@ app.get("/api/leaderboard", async (req, res) => {
 
     const freshMap = {};
     const repeatMap = {};
+    let matchedRows = 0;
+    let minSheetDate = null;
+    let maxSheetDate = null;
 
     rows.slice(1).forEach((row) => {
 
-      // Column O = Disburse Date
-      const caseDate = parseDateValue(row[14]);
+      // Column O = Disburse Date (sheet format: DD-MM-YYYY)
+      const caseDateKey = toDateKey(row[14]);
 
-      // Date Range Filter
-      if (fromDate || toDate) {
-        if (
-          !caseDate ||
-          (fromDate && caseDate < fromDate) ||
-          (toDate && caseDate > endOfDay(toDate))
-        ) {
-          return; 
+      if (caseDateKey) {
+        if (!minSheetDate || caseDateKey < minSheetDate) {
+          minSheetDate = caseDateKey;
+        }
+        if (!maxSheetDate || caseDateKey > maxSheetDate) {
+          maxSheetDate = caseDateKey;
+        }
+      }
+
+      // Date Range Filter (day-level; single date = that day only)
+      if (hasDateFilter) {
+        if (!isDateInRange(caseDateKey, fromDateKey, toDateKey)) {
+          return;
         }
       }
 
@@ -271,8 +310,8 @@ app.get("/api/leaderboard", async (req, res) => {
         .trim()
         .toLowerCase();
 
-      // Month Filter
-      if (selectedMonth !== "all") {
+      // Month Filter (skipped when date filter is active)
+      if (!hasDateFilter && selectedMonth !== "all") {
         const selected = selectedMonth.replace(
           /['\s-]/g,
           ""
@@ -335,6 +374,8 @@ app.get("/api/leaderboard", async (req, res) => {
 
       if (!target) return;
 
+      matchedRows += 1;
+
       if (!target[key]) {
         target[key] = {
           name: executive,
@@ -388,6 +429,15 @@ app.get("/api/leaderboard", async (req, res) => {
     res.json({
       fresh,
       repeat,
+      meta: {
+        matchedRows,
+        fromDate: fromDateKey,
+        toDate: toDateKey,
+        sheetDateRange: {
+          min: minSheetDate,
+          max: maxSheetDate,
+        },
+      },
     });
 
   } catch (err) {
